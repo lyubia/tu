@@ -19,7 +19,13 @@ public interface ProductMapper {
     List<Product> findPopular(Integer limit);
 
     @Select("SELECT * FROM products WHERE status = 'ACTIVE' AND " +
-            "(name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))")
+            "(name LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR category LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR description LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR capability LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR scenarios LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR version LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR provider_name LIKE CONCAT('%', #{keyword}, '%'))")
     List<Product> search(String keyword);
 
     @Insert("INSERT INTO products(name, category, description, capability, scenarios, price, version, " +

@@ -11,6 +11,13 @@
             {{ q }}
           </button>
         </div>
+
+        <div class="quick-questions">
+          <h4>快捷操作</h4>
+          <button class="quick-btn" @click="finishAndGenerate" :disabled="loading">
+            结束对话并生成方案
+          </button>
+        </div>
       </div>
       
       <div class="chat-main">
@@ -21,22 +28,30 @@
             </div>
             <div class="message-content">
               <div class="message-text" v-html="formatMessage(msg.content)"></div>
-              
-              <!-- 推荐产品 -->
-              <div v-if="msg.recommendedProducts?.length" class="recommend-section">
-                <h4>推荐产品</h4>
-                <div class="product-list">
-                  <div v-for="p in msg.recommendedProducts" :key="p.id" class="product-item" @click="$router.push(`/products/${p.id}`)">
-                    <div class="product-name">{{ p.name }}</div>
-                    <div class="product-info">
-                      <span>¥{{ p.price }}万起</span>
-                      <span class="product-category">{{ p.category }}</span>
-                    </div>
-                  </div>
+
+              <div v-if="msg.requirements && Object.keys(msg.requirements).length" class="requirements">
+                <div class="requirements-title">需求要点</div>
+                <div class="requirements-list">
+                  <span v-for="(v, k) in msg.requirements" :key="k" class="req-tag">
+                    {{ requirementLabel(k) }}：{{ v }}
+                  </span>
                 </div>
               </div>
               
-              <!-- 推荐方案 -->
+              <div v-if="msg.recommendedProducts?.length" class="recommend-section">
+                <h4>当前推荐/热门产品</h4>
+                <div class="product-grid">
+                  <ProductCard
+                    v-for="p in msg.recommendedProducts"
+                    :key="p.id"
+                    :product="p"
+                    :showTry="true"
+                    @select="goProduct"
+                    @try="(product) => startTrial(product, null)"
+                  />
+                </div>
+              </div>
+              
               <div v-if="msg.recommendedSolutions?.length" class="recommend-section">
                 <h4>推荐方案</h4>
                 <div class="solution-list">
@@ -50,8 +65,44 @@
                   </div>
                 </div>
               </div>
+
+              <div v-if="msg.bundles?.length" class="recommend-section">
+                <h4>可对比方案（选择后可直接试用）</h4>
+                <div class="bundle-grid">
+                  <div v-for="b in msg.bundles" :key="b.solution?.id" class="bundle-card">
+                    <div class="bundle-header">
+                      <div class="bundle-name">{{ b.solution?.name }}</div>
+                      <div class="bundle-meta">
+                        <span v-if="b.solution?.estimatedDays != null">⏱ {{ b.solution.estimatedDays }}天</span>
+                        <span v-if="b.solution?.priceRange">💰 {{ b.solution.priceRange }}</span>
+                      </div>
+                    </div>
+                    <div v-if="b.solution?.description" class="bundle-desc">{{ b.solution.description }}</div>
+                    <div v-if="b.highlights && Object.keys(b.highlights).length" class="bundle-highlights">
+                      <span v-for="(v, k) in b.highlights" :key="k" class="highlight-tag">{{ k }}：{{ v }}</span>
+                    </div>
+                    <div class="bundle-actions">
+                      <button class="btn-bundle" type="button" @click="chooseBundle(b)">
+                        选择这套方案
+                      </button>
+                    </div>
+                    <div v-if="b.products?.length" class="bundle-products">
+                      <div class="bundle-products-title">可试用产品</div>
+                      <div class="product-grid">
+                        <ProductCard
+                          v-for="p in b.products"
+                          :key="p.id"
+                          :product="p"
+                          :showTry="true"
+                          @select="goProduct"
+                          @try="(product) => startTrial(product, b.solution?.id || null)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
-              <!-- 追问问题 -->
               <div v-if="msg.nextQuestion" class="next-question">
                 <button class="next-question-btn" @click="sendMessage(msg.nextQuestion)">
                   {{ msg.nextQuestion }} →
@@ -91,7 +142,9 @@
 
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { aiAPI } from '../api'
+import ProductCard from '../components/ProductCard.vue'
 
 const messages = ref([
   {
@@ -102,6 +155,7 @@ const messages = ref([
 const inputMessage = ref('')
 const loading = ref(false)
 const messagesRef = ref(null)
+const router = useRouter()
 
 const quickQuestions = [
   '物流行业仓储管理方案',
@@ -120,7 +174,6 @@ async function sendMessage(text = inputMessage.value) {
   const userMessage = text.trim()
   inputMessage.value = ''
   
-  // 添加用户消息
   messages.value.push({ role: 'user', content: userMessage })
   scrollToBottom()
   
@@ -139,6 +192,8 @@ async function sendMessage(text = inputMessage.value) {
       content: data.reply,
       recommendedProducts: data.recommendedProducts,
       recommendedSolutions: data.recommendedSolutions,
+      bundles: data.bundles,
+      requirements: data.requirements,
       nextQuestion: data.needsMoreInfo ? data.nextQuestion : null
     })
   } catch (e) {
@@ -156,6 +211,10 @@ function sendQuickQuestion(q) {
   sendMessage(q)
 }
 
+function finishAndGenerate() {
+  sendMessage('请根据以上对话内容，生成适配我的方案，给出1-2套可对比方案，并推荐可试用的产品。')
+}
+
 function scrollToBottom() {
   nextTick(() => {
     if (messagesRef.value) {
@@ -167,6 +226,39 @@ function scrollToBottom() {
 function formatMessage(text) {
   if (!text) return ''
   return text.replace(/\n/g, '<br>')
+}
+
+function requirementLabel(key) {
+  const map = {
+    industry: '行业',
+    scenario: '场景',
+    capability: '能力点',
+    budget: '预算',
+    scale: '规模',
+    version: '版本',
+    needCase: '案例'
+  }
+  return map[key] || key
+}
+
+function goProduct(product) {
+  router.push(`/products/${product.id}`)
+}
+
+function startTrial(product, solutionId) {
+  localStorage.setItem('trialStart', JSON.stringify({
+    productId: product.id,
+    solutionId
+  }))
+  router.push('/trial')
+}
+
+function chooseBundle(bundle) {
+  const solutionId = bundle?.solution?.id || null
+  localStorage.setItem('selectedBundle', JSON.stringify({
+    solutionId,
+    time: Date.now()
+  }))
 }
 </script>
 
@@ -199,21 +291,35 @@ function formatMessage(text) {
 .message.user .message-text { background: #0066ff; color: #fff; }
 .message.assistant .message-text { background: #f5f7fa; color: #333; }
 
+.requirements { margin-top: 10px; }
+.requirements-title { font-size: 13px; color: #999; margin-bottom: 6px; }
+.requirements-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.req-tag { font-size: 12px; color: #666; background: #f5f7fa; padding: 4px 8px; border-radius: 999px; }
+
 .recommend-section { margin-top: 12px; }
 .recommend-section h4 { font-size: 13px; color: #999; margin-bottom: 8px; }
 
-.product-list { display: flex; flex-direction: column; gap: 8px; }
-.product-item { padding: 12px; background: #f9fafb; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-.product-item:hover { background: #e8f4ff; }
-.product-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
-.product-info { display: flex; justify-content: space-between; font-size: 12px; color: #666; }
-.product-category { color: #0066ff; }
+.product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 
 .solution-list { display: flex; flex-direction: column; gap: 8px; }
 .solution-item { padding: 12px; background: #f9fafb; border-radius: 8px; }
 .solution-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .solution-info { font-size: 12px; color: #666; margin-bottom: 8px; }
 .solution-meta { display: flex; gap: 16px; font-size: 12px; color: #999; }
+
+.bundle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.bundle-card { background: #f9fafb; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.bundle-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.bundle-name { font-size: 14px; font-weight: 600; }
+.bundle-meta { display: flex; gap: 12px; font-size: 12px; color: #999; white-space: nowrap; }
+.bundle-desc { font-size: 12px; color: #666; line-height: 1.5; }
+.bundle-highlights { display: flex; flex-wrap: wrap; gap: 8px; }
+.highlight-tag { font-size: 12px; color: #0066ff; background: #e8f4ff; padding: 4px 8px; border-radius: 999px; }
+.bundle-actions { display: flex; justify-content: flex-end; }
+.btn-bundle { padding: 8px 14px; border: 1px solid #0066ff; background: #fff; color: #0066ff; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.btn-bundle:hover { background: #0066ff; color: #fff; }
+.bundle-products { display: flex; flex-direction: column; gap: 10px; }
+.bundle-products-title { font-size: 13px; color: #999; }
 
 .next-question { margin-top: 8px; }
 .next-question-btn { padding: 8px 16px; background: #fff; border: 1px solid #0066ff; color: #0066ff; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
@@ -234,4 +340,9 @@ function formatMessage(text) {
 .chat-input input:focus { outline: none; border-color: #0066ff; }
 .chat-input button { padding: 12px 24px; background: #0066ff; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
 .chat-input button:disabled { background: #ccc; cursor: not-allowed; }
+
+@media (max-width: 1100px) {
+  .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bundle-grid { grid-template-columns: 1fr; }
+}
 </style>

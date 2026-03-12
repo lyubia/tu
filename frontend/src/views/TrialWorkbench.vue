@@ -53,6 +53,34 @@
               <span class="label">试用时间</span>
               <span>{{ formatDate(trial.startTime) }} - {{ formatDate(trial.endTime) }}</span>
             </div>
+            <div v-if="trial.feedback" class="trial-item">
+              <span class="label">反馈状态</span>
+              <span>{{ feedbackStatusText(trial.feedback.status) }}</span>
+            </div>
+          </div>
+
+          <div v-if="trial.feedback?.providerReply" class="provider-reply">
+            <span class="label">处理回复</span>
+            <span class="reply-text">{{ trial.feedback.providerReply }}</span>
+          </div>
+
+          <div v-if="adminMode && trial.feedback && feedbackEdits[trial.feedback.id]" class="admin-panel">
+            <div class="admin-row">
+              <span class="admin-label">处理状态</span>
+              <select v-model="feedbackEdits[trial.feedback.id].status" class="admin-select">
+                <option value="SUBMITTED">已提交</option>
+                <option value="VIEWED">已查看</option>
+                <option value="REPLIED">已回复</option>
+                <option value="CLOSED">已关闭</option>
+              </select>
+            </div>
+            <div class="admin-row">
+              <span class="admin-label">回复内容</span>
+              <textarea v-model="feedbackEdits[trial.feedback.id].providerReply" class="admin-textarea" rows="2" placeholder="填写处理回复（可选）"></textarea>
+            </div>
+            <div class="admin-actions">
+              <button class="btn-admin" type="button" @click="saveFeedbackUpdate(trial)">更新处理状态</button>
+            </div>
           </div>
 
           <div class="trial-actions">
@@ -165,8 +193,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { trialAPI, productAPI } from '../api'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { trialAPI, productAPI, feedbackAPI } from '../api'
 
 const trials = ref([])
 const products = ref([])
@@ -174,9 +203,13 @@ const stats = ref({ runningCount: 0, completedCount: 0, averageRating: 0 })
 const showNewTrial = ref(false)
 const showFeedbackModal = ref(false)
 const currentTrial = ref(null)
+const route = useRoute()
+const adminMode = computed(() => route.query.admin === '1')
+const feedbackEdits = reactive({})
 
 const newTrial = reactive({
   productId: '',
+  solutionId: null,
   testData: ''
 })
 
@@ -211,6 +244,19 @@ onMounted(async () => {
     newTrial.productId = product.id
     localStorage.removeItem('trialProduct')
   }
+
+  const trialStart = localStorage.getItem('trialStart')
+  if (trialStart) {
+    const payload = JSON.parse(trialStart)
+    if (payload?.productId != null) {
+      newTrial.productId = String(payload.productId)
+      showNewTrial.value = true
+    }
+    if (payload?.solutionId != null) {
+      newTrial.solutionId = payload.solutionId
+    }
+    localStorage.removeItem('trialStart')
+  }
 })
 
 async function loadData() {
@@ -237,6 +283,12 @@ async function loadData() {
       const detail = await trialAPI.detail(trial.id)
       if (detail.data.data?.feedback) {
         trial.feedback = detail.data.data.feedback
+        if (trial.feedback?.id != null) {
+          feedbackEdits[trial.feedback.id] = {
+            status: trial.feedback.status || 'SUBMITTED',
+            providerReply: trial.feedback.providerReply || ''
+          }
+        }
       }
     }
   } catch (e) {
@@ -259,11 +311,13 @@ async function createTrial() {
     await trialAPI.create({
       userId: 1,
       productId: parseInt(newTrial.productId),
+      solutionId: newTrial.solutionId,
       testData: newTrial.testData
     })
     
     showNewTrial.value = false
     newTrial.productId = ''
+    newTrial.solutionId = null
     newTrial.testData = ''
     
     await loadData()
@@ -318,7 +372,46 @@ async function extendTrial(trial) {
 
 function viewFeedback(trial) {
   const fb = trial.feedback
-  alert(`评分: ${'★'.repeat(fb.rating)}\n反馈: ${fb.feedback || '-'}\n问题: ${fb.issues || '-'}\n意向: ${fb.purchaseIntent}`)
+  alert(`评分: ${'★'.repeat(fb.rating)}\n反馈: ${fb.feedback || '-'}\n问题: ${fb.issues || '-'}\n意向: ${purchaseIntentText(fb.purchaseIntent)}\n状态: ${feedbackStatusText(fb.status)}\n处理回复: ${fb.providerReply || '-'}`)
+}
+
+async function saveFeedbackUpdate(trial) {
+  const fb = trial.feedback
+  if (!fb?.id) return
+
+  const edit = feedbackEdits[fb.id]
+  if (!edit) return
+
+  try {
+    await feedbackAPI.update(fb.id, {
+      status: edit.status,
+      providerReply: edit.providerReply || null
+    })
+    await loadData()
+    alert('已更新处理状态')
+  } catch (e) {
+    alert('更新失败：' + e.message)
+  }
+}
+
+function feedbackStatusText(status) {
+  const map = {
+    SUBMITTED: '已提交',
+    VIEWED: '已查看',
+    REPLIED: '已回复',
+    CLOSED: '已关闭'
+  }
+  return map[status] || status || '已提交'
+}
+
+function purchaseIntentText(v) {
+  const map = {
+    NONE: '暂无兴趣',
+    INTERESTED: '感兴趣',
+    PENDING: '考虑中',
+    PURCHASED: '已购买'
+  }
+  return map[v] || v || '-'
 }
 </script>
 
@@ -352,6 +445,19 @@ function viewFeedback(trial) {
 .trial-item { display: flex; flex-direction: column; gap: 4px; }
 .trial-item .label { font-size: 12px; color: #999; }
 .trial-link { color: #0066ff; font-size: 14px; }
+
+.provider-reply { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; background: #f9fafb; padding: 12px; border-radius: 8px; }
+.provider-reply .label { font-size: 12px; color: #999; }
+.reply-text { font-size: 13px; color: #333; line-height: 1.5; }
+
+.admin-panel { margin-bottom: 16px; background: #fff7e6; border: 1px solid #ffe7ba; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
+.admin-row { display: grid; grid-template-columns: 72px 1fr; gap: 10px; align-items: center; }
+.admin-label { font-size: 12px; color: #666; }
+.admin-select { padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; }
+.admin-textarea { padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; resize: vertical; }
+.admin-actions { display: flex; justify-content: flex-end; }
+.btn-admin { padding: 8px 14px; border: none; border-radius: 8px; background: #fa8c16; color: #fff; cursor: pointer; font-size: 13px; }
+.btn-admin:hover { opacity: 0.9; }
 
 .trial-actions { display: flex; gap: 12px; }
 .btn-action { padding: 8px 16px; border: 1px solid #e0e0e0; background: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }

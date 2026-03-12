@@ -80,10 +80,19 @@ public class TrialService {
         fb.setFeedback(feedback);
         fb.setIssues(issues);
         fb.setPurchaseIntent(purchaseIntent);
-        
-        feedbackMapper.insert(fb);
+        fb.setStatus("SUBMITTED");
+        fb.setProviderReply(null);
+
+        TrialFeedback existing = feedbackMapper.findByTrialId(trialId);
+        if (existing == null) {
+            feedbackMapper.insert(fb);
+        } else {
+            feedbackMapper.updateByTrialId(fb);
+            fb = feedbackMapper.findByTrialId(trialId);
+        }
+
         trialMapper.updateStatus(trialId, "COMPLETED");
-        
+
         return fb;
     }
 

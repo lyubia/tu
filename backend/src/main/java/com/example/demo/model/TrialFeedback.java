@@ -10,7 +10,10 @@ public class TrialFeedback {
     private String feedback;
     private String issues;
     private String purchaseIntent;
+    private String status;
+    private String providerReply;
     private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -26,6 +29,12 @@ public class TrialFeedback {
     public void setIssues(String issues) { this.issues = issues; }
     public String getPurchaseIntent() { return purchaseIntent; }
     public void setPurchaseIntent(String purchaseIntent) { this.purchaseIntent = purchaseIntent; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getProviderReply() { return providerReply; }
+    public void setProviderReply(String providerReply) { this.providerReply = providerReply; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+    public LocalDateTime getUpdateTime() { return updateTime; }
+    public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
 }

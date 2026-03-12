@@ -29,4 +29,9 @@ export const aiAPI = {
   recommend: (requirements) => api.post('/ai/recommend', requirements)
 }
 
+export const feedbackAPI = {
+  listAll: () => api.get('/feedback/all'),
+  update: (id, data) => api.put(`/feedback/${id}`, data)
+}
+
 export default api
