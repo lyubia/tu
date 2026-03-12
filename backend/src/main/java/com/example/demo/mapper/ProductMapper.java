@@ -25,16 +25,36 @@ public interface ProductMapper {
             "OR capability LIKE CONCAT('%', #{keyword}, '%') " +
             "OR scenarios LIKE CONCAT('%', #{keyword}, '%') " +
             "OR version LIKE CONCAT('%', #{keyword}, '%') " +
-            "OR provider_name LIKE CONCAT('%', #{keyword}, '%'))")
+            "OR provider_name LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR source_name LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR customers LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR cases LIKE CONCAT('%', #{keyword}, '%'))")
     List<Product> search(String keyword);
 
+    @Select("SELECT * FROM products WHERE owner_user_id = #{ownerUserId} ORDER BY update_time DESC, create_time DESC")
+    List<Product> findByOwnerUserId(Long ownerUserId);
+
+    @Select("SELECT * FROM products WHERE status = 'DRAFT' AND source_type = 'PARTNER' ORDER BY create_time DESC")
+    List<Product> findPendingPartner();
+
     @Insert("INSERT INTO products(name, category, description, capability, scenarios, price, version, " +
-            "provider_name, popularity, status, create_time, update_time) " +
+            "provider_name, source_type, source_name, source_url, external_demo_url, customers, cases, owner_user_id, " +
+            "popularity, status, create_time, update_time) " +
             "VALUES(#{name}, #{category}, #{description}, #{capability}, #{scenarios}, #{price}, " +
-            "#{version}, #{providerName}, #{popularity}, #{status}, NOW(), NOW())")
+            "#{version}, #{providerName}, #{sourceType}, #{sourceName}, #{sourceUrl}, #{externalDemoUrl}, #{customers}, #{cases}, #{ownerUserId}, " +
+            "#{popularity}, #{status}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Product product);
 
     @Update("UPDATE products SET popularity = #{popularity} WHERE id = #{id}")
     int updatePopularity(@Param("id") Long id, @Param("popularity") Integer popularity);
+
+    @Update("UPDATE products SET status = #{status}, update_time = NOW() WHERE id = #{id}")
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
+
+    @Update("UPDATE products SET name=#{name}, category=#{category}, description=#{description}, capability=#{capability}, scenarios=#{scenarios}, " +
+            "price=#{price}, version=#{version}, provider_name=#{providerName}, source_name=#{sourceName}, source_url=#{sourceUrl}, " +
+            "external_demo_url=#{externalDemoUrl}, customers=#{customers}, cases=#{cases}, update_time=NOW() " +
+            "WHERE id=#{id}")
+    int updateEditable(Product product);
 }

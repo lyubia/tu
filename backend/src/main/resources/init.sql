@@ -27,11 +27,46 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(15, 2),
     version VARCHAR(50),
     provider_name VARCHAR(200),
+    source_type VARCHAR(20) DEFAULT 'INTERNAL' COMMENT 'INTERNAL/PARTNER/BENCHMARK',
+    source_name VARCHAR(200),
+    source_url VARCHAR(500),
+    external_demo_url VARCHAR(500),
+    customers TEXT,
+    cases TEXT,
+    owner_user_id BIGINT,
     popularity INT DEFAULT 0,
     status VARCHAR(20) DEFAULT 'ACTIVE' COMMENT 'DRAFT/ACTIVE/OFFLINE',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'source_type');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN source_type VARCHAR(20) DEFAULT ''INTERNAL'' COMMENT ''INTERNAL/PARTNER/BENCHMARK''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'source_name');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN source_name VARCHAR(200)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'source_url');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN source_url VARCHAR(500)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'external_demo_url');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN external_demo_url VARCHAR(500)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'customers');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN customers TEXT', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'cases');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN cases TEXT', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'owner_user_id');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE products ADD COLUMN owner_user_id BIGINT', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 方案表
 CREATE TABLE IF NOT EXISTS solutions (
@@ -137,6 +172,46 @@ INSERT INTO products (name, category, description, capability, scenarios, price,
 
 ('物流数据中台与指标体系', '数据平台', '统一接入WMS/TMS/OMS等多源数据，沉淀指标体系与主题模型，支撑推荐、运营与试用报告生成', 
  '数据接入与治理、主数据管理、指标口径管理、数据服务API', '运营分析、转化漏斗、需求画像、数据资产化', 188.00, 'v1.0', '数仓工坊', 93);
+
+-- 外部产品 Mock（生态产品：伙伴/对标），用于展示“外部体验”入口与审核流程
+INSERT INTO products (
+  name, category, description, capability, scenarios, price, version, provider_name,
+  source_type, source_name, source_url, external_demo_url, customers, cases, owner_user_id,
+  popularity, status, create_time, update_time
+)
+SELECT
+  'CargoWise One（Mock）', '国际货代/关务', '对标产品：国际货代与通关一体化平台（示例数据）',
+  '关务申报、舱单管理、费用结算、在途可视化', '跨境物流、国际货代、海运空运', 299.00, 'SaaS', '生态伙伴A',
+  'BENCHMARK', 'WiseTech Global', 'https://example.com/wise-tech', 'https://demo.example.com/external/cargowise',
+  '某跨境电商,某货代集团', '跨境业务一体化上线（Mock）', 3,
+  70, 'ACTIVE', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'CargoWise One（Mock）');
+
+INSERT INTO products (
+  name, category, description, capability, scenarios, price, version, provider_name,
+  source_type, source_name, source_url, external_demo_url, customers, cases, owner_user_id,
+  popularity, status, create_time, update_time
+)
+SELECT
+  'Blue Yonder WMS（Mock）', '仓储管理', '对标产品：仓储管理系统（示例数据）',
+  '波次拣选、库位优化、自动补货、设备对接', '电商仓储、制造仓库、冷链仓储', 260.00, 'Cloud', '生态伙伴B',
+  'BENCHMARK', 'Blue Yonder', 'https://example.com/blue-yonder', 'https://demo.example.com/external/by-wms',
+  '某头部零售,某3PL', '多仓统一WMS（Mock）', 3,
+  66, 'ACTIVE', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = 'Blue Yonder WMS（Mock）');
+
+INSERT INTO products (
+  name, category, description, capability, scenarios, price, version, provider_name,
+  source_type, source_name, source_url, external_demo_url, customers, cases, owner_user_id,
+  popularity, status, create_time, update_time
+)
+SELECT
+  '伙伴TMS轻量版（Mock）', '运输管理', '生态伙伴提交：提供外部试用链接（方式A），等待管理员审核',
+  '运单管理、调度派车、轨迹回传、对账结算', '同城配送、干线运输', 49.00, 'v0.9', '生态伙伴C',
+  'PARTNER', '生态伙伴C', 'https://example.com/partner-c', 'https://demo.example.com/external/partner-tms-lite',
+  '某区域快运', '区域快运TMS落地（Mock）', 3,
+  10, 'DRAFT', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM products WHERE name = '伙伴TMS轻量版（Mock）');
 
 INSERT INTO solutions (name, description, target_industry, scenarios, architecture, estimated_days, price_range) VALUES
 ('智慧物流解决方案', '面向物流企业的端到端数字化方案', '物流', '仓储+运输+配送', '微服务架构', 90, '50-200万'),

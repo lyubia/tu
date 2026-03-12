@@ -13,6 +13,14 @@
     <div class="product-footer">
       <span v-if="product.price != null" class="product-price">¥{{ product.price }}万起</span>
       <button
+        v-if="product.externalDemoUrl"
+        class="btn-external"
+        type="button"
+        @click.stop="openExternal"
+      >
+        外部体验
+      </button>
+      <button
         v-if="showTry"
         class="btn-try"
         type="button"
@@ -33,6 +41,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select', 'try'])
+
+function openExternal() {
+  const url = props.product?.externalDemoUrl
+  if (!url) return
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 
 const capabilityText = computed(() => {
   const cap = props.product?.capability
@@ -101,6 +115,7 @@ const scenarioText = computed(() => {
   line-height: 1.5;
   margin-bottom: 12px;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -148,5 +163,21 @@ const scenarioText = computed(() => {
 
 .btn-try:hover {
   opacity: 0.9;
+}
+
+.btn-external {
+  padding: 8px 14px;
+  background: #f5f7fa;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.btn-external:hover {
+  border-color: #0066ff;
+  color: #0066ff;
 }
 </style>

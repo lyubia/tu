@@ -36,7 +36,16 @@ export const feedbackAPI = {
 
 export const adminAPI = {
   trialRequests: () => api.get('/admin/trial-requests'),
-  trialRequestDetail: (trialId) => api.get(`/admin/trial-requests/${trialId}`)
+  trialRequestDetail: (trialId) => api.get(`/admin/trial-requests/${trialId}`),
+  pendingProducts: () => api.get('/admin/products/pending'),
+  approveProduct: (id) => api.put(`/admin/products/${id}/approve`),
+  offlineProduct: (id) => api.put(`/admin/products/${id}/offline`)
+}
+
+export const partnerAPI = {
+  myProducts: (ownerUserId) => api.get('/partner/products', { params: { ownerUserId } }),
+  createProduct: (data) => api.post('/partner/products', data),
+  updateProduct: (id, data) => api.put(`/partner/products/${id}`, data)
 }
 
 export default api

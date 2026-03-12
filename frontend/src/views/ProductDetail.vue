@@ -33,6 +33,10 @@
               <span class="info-label">供应商</span>
               <span class="info-value">{{ product.providerName }}</span>
             </div>
+            <div v-if="product.sourceType" class="info-item">
+              <span class="info-label">来源</span>
+              <span class="info-value">{{ product.sourceType }}</span>
+            </div>
             <div class="info-item">
               <span class="info-label">价格</span>
               <span class="info-value price">¥{{ product.price }}万起</span>
@@ -40,6 +44,10 @@
             <div class="info-item">
               <span class="info-label">热度</span>
               <span class="info-value">🔥 {{ product.popularity }}</span>
+            </div>
+            <div v-if="product.externalDemoUrl" class="info-item">
+              <span class="info-label">外部体验</span>
+              <a class="info-value link" :href="product.externalDemoUrl" target="_blank">{{ product.externalDemoUrl }}</a>
             </div>
           </div>
         </div>
@@ -52,7 +60,8 @@
             <span class="price-value">¥{{ product.price }}</span>
             <span class="price-unit">万起</span>
           </div>
-          <button class="btn-primary" @click="startTrial">立即试用</button>
+          <button v-if="product.externalDemoUrl" class="btn-primary" @click="openExternal">外部体验</button>
+          <button v-else class="btn-primary" @click="startTrial">立即试用</button>
           <button class="btn-secondary" @click="$router.push('/ai-chat')">咨询顾问</button>
         </div>
         
@@ -91,6 +100,12 @@ function startTrial() {
   localStorage.setItem('trialProduct', JSON.stringify(product.value))
   window.location.href = '/trial'
 }
+
+function openExternal() {
+  const url = product.value?.externalDemoUrl
+  if (!url) return
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 </script>
 
 <style scoped>
@@ -116,6 +131,7 @@ function startTrial() {
 .info-label { display: block; font-size: 12px; color: #999; margin-bottom: 4px; }
 .info-value { font-size: 14px; font-weight: 500; }
 .info-value.price { color: #ff4d4f; font-size: 18px; }
+.info-value.link { color: #0066ff; word-break: break-all; }
 
 .detail-sidebar { display: flex; flex-direction: column; gap: 20px; }
 .action-card { background: #fff; padding: 24px; border-radius: 12px; position: sticky; top: 100px; }

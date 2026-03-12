@@ -13,6 +13,13 @@ public class Product {
     private BigDecimal price;
     private String version;
     private String providerName;
+    private String sourceType;
+    private String sourceName;
+    private String sourceUrl;
+    private String externalDemoUrl;
+    private String customers;
+    private String cases;
+    private Long ownerUserId;
     private Integer popularity;
     private String status;
     private LocalDateTime createTime;
@@ -36,6 +43,20 @@ public class Product {
     public void setVersion(String version) { this.version = version; }
     public String getProviderName() { return providerName; }
     public void setProviderName(String providerName) { this.providerName = providerName; }
+    public String getSourceType() { return sourceType; }
+    public void setSourceType(String sourceType) { this.sourceType = sourceType; }
+    public String getSourceName() { return sourceName; }
+    public void setSourceName(String sourceName) { this.sourceName = sourceName; }
+    public String getSourceUrl() { return sourceUrl; }
+    public void setSourceUrl(String sourceUrl) { this.sourceUrl = sourceUrl; }
+    public String getExternalDemoUrl() { return externalDemoUrl; }
+    public void setExternalDemoUrl(String externalDemoUrl) { this.externalDemoUrl = externalDemoUrl; }
+    public String getCustomers() { return customers; }
+    public void setCustomers(String customers) { this.customers = customers; }
+    public String getCases() { return cases; }
+    public void setCases(String cases) { this.cases = cases; }
+    public Long getOwnerUserId() { return ownerUserId; }
+    public void setOwnerUserId(Long ownerUserId) { this.ownerUserId = ownerUserId; }
     public Integer getPopularity() { return popularity; }
     public void setPopularity(Integer popularity) { this.popularity = popularity; }
     public String getStatus() { return status; }
