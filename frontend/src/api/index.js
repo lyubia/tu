@@ -23,6 +23,13 @@ export const trialAPI = {
   stats: () => api.get('/trials/stats')
 }
 
+// 方案 API - v1.0
+export const solutionAPI = {
+  list: (params) => api.get('/solutions', { params }),
+  detail: (id) => api.get(`/solutions/${id}`),
+  industries: () => api.get('/solutions/industries')
+}
+
 // AI API
 export const aiAPI = {
   chat: (data) => api.post('/ai/chat', data),

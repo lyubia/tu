@@ -23,13 +23,6 @@
 
           <template v-else-if="block.type === 'entry'">
             <div class="quick-entry">
-              <div class="entry-card" @click="$router.push('/trial')">
-                <div class="entry-icon">🧪</div>
-                <div class="entry-text">
-                  <h3>免费试用</h3>
-                  <p>在线体验产品功能</p>
-                </div>
-              </div>
               <div class="entry-card" @click="$router.push('/ai-chat')">
                 <div class="entry-icon">🤖</div>
                 <div class="entry-text">
@@ -37,11 +30,25 @@
                   <p>智能推荐方案</p>
                 </div>
               </div>
-              <div class="entry-card">
-                <div class="entry-icon">📊</div>
+              <div class="entry-card" @click="$router.push('/solutions')">
+                <div class="entry-icon">📋</div>
                 <div class="entry-text">
-                  <h3>案例中心</h3>
-                  <p>成功案例展示</p>
+                  <h3>解决方案</h3>
+                  <p>行业方案推荐</p>
+                </div>
+              </div>
+              <div class="entry-card" @click="$router.push('/products')">
+                <div class="entry-icon">📦</div>
+                <div class="entry-text">
+                  <h3>产品库</h3>
+                  <p>浏览全部产品</p>
+                </div>
+              </div>
+              <div class="entry-card" @click="$router.push('/trial')">
+                <div class="entry-icon">🧪</div>
+                <div class="entry-text">
+                  <h3>免费试用</h3>
+                  <p>在线体验产品</p>
                 </div>
               </div>
             </div>

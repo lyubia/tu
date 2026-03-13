@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class Solution {
     private Long id;
@@ -13,6 +14,9 @@ public class Solution {
     private Integer estimatedDays;
     private String priceRange;
     private LocalDateTime createTime;
+    
+    // 关联产品（非数据库字段）
+    private List<Product> products;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -34,4 +38,7 @@ public class Solution {
     public void setPriceRange(String priceRange) { this.priceRange = priceRange; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+    
+    public List<Product> getProducts() { return products; }
+    public void setProducts(List<Product> products) { this.products = products; }
 }
