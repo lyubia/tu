@@ -10,6 +10,8 @@
           <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">首页</router-link>
           <router-link to="/products" class="nav-link" :class="{ active: $route.path.startsWith('/products') }">产品库</router-link>
           <router-link to="/solutions" class="nav-link" :class="{ active: $route.path.startsWith('/solutions') }">解决方案</router-link>
+          <router-link to="/requirements" class="nav-link" :class="{ active: $route.path === '/requirements' }">需求中心</router-link>
+          <router-link to="/recommendations" class="nav-link" :class="{ active: $route.path === '/recommendations' }">推荐中心</router-link>
           <router-link to="/ai-chat" class="nav-link" :class="{ active: $route.path === '/ai-chat' }">AI 顾问</router-link>
           <router-link to="/trial" class="nav-link trial-link" :class="{ active: $route.path === '/trial' }">试用工作台</router-link>
           <router-link to="/partner" class="nav-link partner-link" :class="{ active: $route.path === '/partner' }" v-if="currentRole === '提供方'">提供方工作台</router-link>
