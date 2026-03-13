@@ -5,12 +5,6 @@
         <h3>💡 AI 智能顾问</h3>
         <p class="chat-intro">告诉我您的需求，AI 将为您推荐合适的产品和方案</p>
         
-        <!-- 需求清单组件 -->
-        <RequirementForm 
-          :requirements="currentRequirements" 
-          @generate="finishAndGenerate"
-        />
-        
         <div class="quick-questions">
           <h4>常见问题</h4>
           <button v-for="q in quickQuestions" :key="q" class="quick-btn" @click="sendQuickQuestion(q)">
@@ -20,7 +14,7 @@
 
         <div class="quick-questions">
           <h4>快捷操作</h4>
-          <button class="quick-btn finish-btn" @click="finishAndGenerate" :disabled="loading">
+          <button class="quick-btn" @click="finishAndGenerate" :disabled="loading">
             结束对话并生成方案
           </button>
         </div>
@@ -147,11 +141,10 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { aiAPI } from '../api'
 import ProductCard from '../components/ProductCard.vue'
-import RequirementForm from '../components/RequirementForm.vue'
 
 const messages = ref([
   {
@@ -163,17 +156,6 @@ const inputMessage = ref('')
 const loading = ref(false)
 const messagesRef = ref(null)
 const router = useRouter()
-
-// 收集当前所有需求
-const currentRequirements = computed(() => {
-  const reqs = {}
-  messages.value.forEach(m => {
-    if (m.requirements) {
-      Object.assign(reqs, m.requirements)
-    }
-  })
-  return reqs
-})
 
 const quickQuestions = [
   '物流行业仓储管理方案',
@@ -292,8 +274,6 @@ function chooseBundle(bundle) {
 .quick-questions h4 { font-size: 14px; color: #999; margin-bottom: 12px;  margin-top: 60px; }
 .quick-btn { display: block; width: 100%; text-align: left; padding: 10px 12px; background: #f5f7fa; border: none; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
 .quick-btn:hover { background: #e8f4ff; color: #0066ff; }
-.quick-btn.finish-btn { background: #f6ffed; color: #52c41a; }
-.quick-btn.finish-btn:hover { background: #d9f7be; }
 
 .chat-main { background: #fff; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
 
