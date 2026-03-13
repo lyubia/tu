@@ -67,6 +67,7 @@
         <div class="card-actions">
           <button class="btn btn-primary">查看详情</button>
           <button class="btn btn-outline" @click.stop="startTrial(solution)">申请试用</button>
+          <button class="btn btn-compare" @click.stop="compareSolution(solution)">对比</button>
         </div>
       </div>
     </div>
@@ -125,6 +126,9 @@ export default {
     },
     startTrial(solution) {
       this.$router.push({ path: '/ai-chat', query: { solutionId: solution.id } })
+    },
+    compareSolution(solution) {
+      this.$router.push({ path: '/solutions/compare', query: { ids: solution.id } })
     }
   }
 }
@@ -316,6 +320,16 @@ export default {
 
 .btn-outline:hover {
   background: #e6f7ff;
+}
+
+.btn-compare {
+  background: #fff;
+  color: #52c41a;
+  border: 1px solid #52c41a;
+}
+
+.btn-compare:hover {
+  background: #f6ffed;
 }
 
 .loading, .empty-state {

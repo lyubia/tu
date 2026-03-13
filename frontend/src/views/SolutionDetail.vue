@@ -53,6 +53,9 @@
           <button class="btn btn-outline btn-large" @click="contactConsult">
             联系咨询
           </button>
+          <button class="btn btn-compare btn-large" @click="compareWithOthers">
+            对比其他方案
+          </button>
         </div>
       </div>
 
@@ -117,6 +120,9 @@ export default {
     },
     contactConsult() {
       this.$message.info('请联系客服：400-888-8888')
+    },
+    compareWithOthers() {
+      this.$router.push({ path: '/solutions/compare', query: { ids: this.solution.id } })
     }
   }
 }
@@ -263,6 +269,16 @@ export default {
 
 .btn-outline:hover {
   background: #e6f7ff;
+}
+
+.btn-compare {
+  background: #fff;
+  color: #52c41a;
+  border: 1px solid #52c41a;
+}
+
+.btn-compare:hover {
+  background: #f6ffed;
 }
 
 .section {
