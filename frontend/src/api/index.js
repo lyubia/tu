@@ -37,7 +37,9 @@ export const aiAPI = {
 }
 
 export const feedbackAPI = {
+  submit: (data) => api.post('/feedback/submit', data),
   listAll: () => api.get('/feedback/all'),
+  userFeedback: (userId) => api.get(`/feedback/user/${userId}`),
   update: (id, data) => api.put(`/feedback/${id}`, data)
 }
 

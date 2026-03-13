@@ -52,8 +52,10 @@
                     :key="p.id"
                     :product="p"
                     :showTry="true"
+                    :showFeedback="true"
                     @select="goProduct"
                     @try="(product) => startTrial(product, null)"
+                    @feedback="(product, type) => submitFeedback(product, type)"
                   />
                 </div>
               </div>
@@ -67,6 +69,10 @@
                     <div class="solution-meta">
                       <span>⏱ {{ s.estimatedDays }}天</span>
                       <span>💰 {{ s.priceRange }}</span>
+                    </div>
+                    <div class="solution-actions">
+                      <button class="feedback-btn interested" @click="submitFeedback({id: s.id, name: s.name}, 'INTERESTED')">感兴趣</button>
+                      <button class="feedback-btn not-match" @click="submitFeedback({id: s.id, name: s.name}, 'NOT_MATCH')">不匹配</button>
                     </div>
                   </div>
                 </div>
@@ -149,7 +155,7 @@
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { aiAPI } from '../api'
+import { aiAPI, feedbackAPI } from '../api'
 import ProductCard from '../components/ProductCard.vue'
 import RequirementForm from '../components/RequirementForm.vue'
 
@@ -278,6 +284,25 @@ function chooseBundle(bundle) {
     time: Date.now()
   }))
 }
+
+async function submitFeedback(item, type) {
+  try {
+    await feedbackAPI.submit({
+      userId: 1,
+      productId: item.id,
+      feedbackType: type,
+      feedbackText: ''
+    })
+    
+    messages.value.push({
+      role: 'assistant',
+      content: `感谢您的反馈！${type === 'INTERESTED' ? '我们会重点推荐这类产品。' : '抱歉这个方案不适合您，让我们继续完善需求。'}`
+    })
+    scrollToBottom()
+  } catch (e) {
+    console.error('提交反馈失败:', e)
+  }
+}
 </script>
 
 <style scoped>
@@ -326,6 +351,12 @@ function chooseBundle(bundle) {
 .solution-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .solution-info { font-size: 12px; color: #666; margin-bottom: 8px; }
 .solution-meta { display: flex; gap: 16px; font-size: 12px; color: #999; }
+.solution-actions { display: flex; gap: 8px; margin-top: 12px; }
+.feedback-btn { padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; border: none; }
+.feedback-btn.interested { background: #f6ffed; color: #52c41a; }
+.feedback-btn.interested:hover { background: #d9f7be; }
+.feedback-btn.not-match { background: #fff1f0; color: #ff4d4f; }
+.feedback-btn.not-match:hover { background: #ffccc7; }
 
 .bundle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .bundle-card { background: #f9fafb; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }

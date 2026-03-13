@@ -29,6 +29,10 @@
         立即试用
       </button>
     </div>
+    <div v-if="showFeedback" class="product-feedback">
+      <button class="feedback-btn interested" @click.stop="emit('feedback', product, 'INTERESTED')">感兴趣</button>
+      <button class="feedback-btn not-match" @click.stop="emit('feedback', product, 'NOT_MATCH')">不匹配</button>
+    </div>
   </div>
 </template>
 
@@ -37,10 +41,11 @@ import { computed } from 'vue'
 
 const props = defineProps({
   product: { type: Object, required: true },
-  showTry: { type: Boolean, default: false }
+  showTry: { type: Boolean, default: false },
+  showFeedback: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['select', 'try'])
+const emit = defineEmits(['select', 'try', 'feedback'])
 
 function openExternal() {
   const url = props.product?.externalDemoUrl
@@ -179,5 +184,40 @@ const scenarioText = computed(() => {
 .btn-external:hover {
   border-color: #0066ff;
   color: #0066ff;
+}
+
+.product-feedback {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.feedback-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+}
+
+.feedback-btn.interested {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.feedback-btn.interested:hover {
+  background: #d9f7be;
+}
+
+.feedback-btn.not-match {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.feedback-btn.not-match:hover {
+  background: #ffccc7;
 }
 </style>

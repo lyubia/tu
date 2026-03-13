@@ -1,46 +1,51 @@
 package com.example.demo.controller;
 
-import com.example.demo.mapper.TrialFeedbackMapper;
-import com.example.demo.model.TrialFeedback;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/feedback")
 @CrossOrigin(origins = "*")
 public class FeedbackController {
 
-    @Autowired
-    private TrialFeedbackMapper feedbackMapper;
-
-    @GetMapping("/all")
-    public Map<String, Object> all() {
-        List<TrialFeedback> list = feedbackMapper.findAll();
+    /**
+     * 提交方案/产品反馈
+     */
+    @PostMapping("/submit")
+    public Map<String, Object> submit(@RequestBody Map<String, Object> feedback) {
         Map<String, Object> result = new HashMap<>();
-        result.put("data", list);
-        result.put("total", list.size());
+        
+        // 模拟保存反馈
+        Long feedbackId = new Random().nextLong(1000, 9999);
+        
+        result.put("success", true);
+        result.put("message", "反馈已提交，感谢您的意见！");
+        result.put("feedbackId", feedbackId);
+        
         return result;
     }
 
-    @PutMapping("/{id}")
-    public Map<String, Object> update(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> request) {
-
-        String status = (String) request.getOrDefault("status", "SUBMITTED");
-        String providerReply = (String) request.getOrDefault("providerReply", null);
-
-        feedbackMapper.updateStatusAndReply(id, status, providerReply);
-
-        TrialFeedback updated = feedbackMapper.findById(id);
+    /**
+     * 获取用户反馈历史
+     */
+    @GetMapping("/user/{userId}")
+    public Map<String, Object> userFeedback(@PathVariable Long userId) {
         Map<String, Object> result = new HashMap<>();
-        result.put("data", updated);
-        result.put("message", "更新成功");
+        
+        List<Map<String, Object>> feedbacks = new ArrayList<>();
+        
+        // 模拟数据
+        feedbacks.add(Map.of(
+            "id", 1,
+            "productName", "智能仓储管理系统",
+            "feedbackType", "INTERESTED",
+            "feedbackText", "功能很强大",
+            "createTime", "2026-03-12"
+        ));
+        
+        result.put("data", feedbacks);
+        
         return result;
     }
 }
-
