@@ -9,6 +9,7 @@ import TrialWorkbench from '../views/TrialWorkbench.vue'
 import AIChat from '../views/AIChat.vue'
 import AdminConsole from '../views/AdminConsole.vue'
 import PartnerConsole from '../views/PartnerConsole.vue'
+import TrialReport from '../views/TrialReport.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -18,6 +19,7 @@ const routes = [
   { path: '/solutions/:id', name: 'SolutionDetail', component: SolutionDetail },
   { path: '/solutions/compare', name: 'SolutionCompare', component: SolutionCompare },
   { path: '/trial', name: 'TrialWorkbench', component: TrialWorkbench },
+  { path: '/trial/report', name: 'TrialReport', component: TrialReport },
   { path: '/ai-chat', name: 'AIChat', component: AIChat },
   { path: '/admin', name: 'AdminConsole', component: AdminConsole },
   { path: '/partner', name: 'PartnerConsole', component: PartnerConsole }
