@@ -7,7 +7,6 @@ import SolutionDetail from '../views/SolutionDetail.vue'
 import SolutionCompare from '../views/SolutionCompare.vue'
 import RequirementCenter from '../views/RequirementCenter.vue'
 import RecommendationCenter from '../views/RecommendationCenter.vue'
-import ProviderProducts from '../views/ProviderProducts.vue'
 import AdminRoles from '../views/AdminRoles.vue'
 import AdminAudit from '../views/AdminAudit.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
@@ -33,7 +32,6 @@ const routes = [
   { path: '/admin/roles', name: 'AdminRoles', component: AdminRoles },
   { path: '/admin/audit', name: 'AdminAudit', component: AdminAudit },
   { path: '/admin/dashboard', name: 'AdminDashboard', component: AdminDashboard },
-  { path: '/provider/products', name: 'ProviderProducts', component: ProviderProducts },
   { path: '/partner', name: 'PartnerConsole', component: PartnerConsole }
 ]
 
