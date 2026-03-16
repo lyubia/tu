@@ -20,4 +20,19 @@ export const aiAPI = {
   chat: (data) => api.post('/ai/chat', data)
 }
 
+// 为兼容现有代码，导出空对象
+export const productAPI = {
+  list: () => Promise.resolve({ data: { data: [] } }),
+  popular: () => Promise.resolve({ data: { data: [] } }),
+  detail: () => Promise.resolve({ data: { data: {} } }),
+  categories: () => Promise.resolve({ data: { data: [] } })
+}
+
+export const feedbackAPI = {
+  submit: () => Promise.resolve({ data: { success: true } }),
+  listAll: () => Promise.resolve({ data: { data: [] } }),
+  userFeedback: () => Promise.resolve({ data: { data: [] } }),
+  update: () => Promise.resolve({ data: { success: true } })
+}
+
 export default api
