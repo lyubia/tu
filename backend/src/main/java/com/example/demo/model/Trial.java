@@ -5,8 +5,6 @@ import java.time.LocalDateTime;
 public class Trial {
     private Long id;
     private Long userId;
-    private Long productId;
-    private Long solutionId;
     private String environmentUrl;
     private String testData;
     private String status;
@@ -19,10 +17,6 @@ public class Trial {
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
-    public Long getProductId() { return productId; }
-    public void setProductId(Long productId) { this.productId = productId; }
-    public Long getSolutionId() { return solutionId; }
-    public void setSolutionId(Long solutionId) { this.solutionId = solutionId; }
     public String getEnvironmentUrl() { return environmentUrl; }
     public void setEnvironmentUrl(String environmentUrl) { this.environmentUrl = environmentUrl; }
     public String getTestData() { return testData; }
