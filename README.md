@@ -23,7 +23,7 @@
 | 后端 | Spring Boot 3.2 (Java 17) |
 | 数据库 | MySQL 8.0 |
 | ORM | MyBatis |
-| AI | 可扩展对接大语言模型 |
+| AI | 可扩展对接大语言模型 (当前支持 SCNet MiniMax-M2.5) |
 
 ---
 
