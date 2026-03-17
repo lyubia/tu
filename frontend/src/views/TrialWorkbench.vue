@@ -116,9 +116,54 @@
         </div>
         
         <div class="modal-body">
+          <!-- 需求信息（完整性检查） -->
+          <div class="form-section">
+            <h4 class="section-title">需求信息 <span class="required">*必填</span></h4>
+            
+            <div class="form-group">
+              <label>行业 <span class="required-star">*</span></label>
+              <select v-model="newTrial.industry" class="form-select" :class="{ error: !newTrial.industry && submitAttempted }">
+                <option value="">请选择行业</option>
+                <option value="物流">物流</option>
+                <option value="电商">电商</option>
+                <option value="制造业">制造业</option>
+                <option value="零售">零售</option>
+                <option value="医疗">医疗</option>
+                <option value="教育">教育</option>
+                <option value="金融">金融</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>使用场景 <span class="required-star">*</span></label>
+              <input 
+                v-model="newTrial.scenario" 
+                type="text" 
+                class="form-input" 
+                placeholder="请描述您的使用场景，如：仓储管理、订单处理等"
+                :class="{ error: !newTrial.scenario && submitAttempted }"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label>预算范围 <span class="required-star">*</span></label>
+              <select v-model="newTrial.budget" class="form-select" :class="{ error: !newTrial.budget && submitAttempted }">
+                <option value="">请选择预算</option>
+                <option value="1万以下">1万以下</option>
+                <option value="1-5万">1-5万</option>
+                <option value="5-10万">5-10万</option>
+                <option value="10-30万">10-30万</option>
+                <option value="30-50万">30-50万</option>
+                <option value="50万以上">50万以上</option>
+                <option value="暂未确定">暂未确定</option>
+              </select>
+            </div>
+          </div>
+          
           <div class="form-group">
             <label>选择产品</label>
-            <select v-model="newTrial.productId" class="form-select">
+            <select v-model="newTrial.productId" class="form-select" :class="{ error: !newTrial.productId && submitAttempted }">
               <option value="">请选择产品</option>
               <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
@@ -210,8 +255,38 @@ const feedbackEdits = reactive({})
 const newTrial = reactive({
   productId: '',
   solutionId: null,
-  testData: ''
+  testData: '',
+  industry: '',
+  scenario: '',
+  budget: ''
 })
+const submitAttempted = ref(false)
+
+// 校验表单完整性
+function validateTrialForm() {
+  submitAttempted.value = true
+  
+  const errors = []
+  
+  if (!newTrial.industry || !newTrial.industry.trim()) {
+    errors.push('行业')
+  }
+  if (!newTrial.scenario || !newTrial.scenario.trim()) {
+    errors.push('场景')
+  }
+  if (!newTrial.budget || !newTrial.budget.trim()) {
+    errors.push('预算')
+  }
+  if (!newTrial.productId) {
+    errors.push('产品')
+  }
+  
+  if (errors.length > 0) {
+    alert(`请完善以下必填信息：${errors.join('、')}`)
+    return false
+  }
+  return true
+}
 
 const feedbackForm = reactive({
   rating: 0,
@@ -307,18 +382,31 @@ function formatDate(dateStr) {
 }
 
 async function createTrial() {
+  // 进行完整性校验
+  if (!validateTrialForm()) {
+    return
+  }
+  
   try {
     await trialAPI.create({
       userId: 1,
       productId: parseInt(newTrial.productId),
       solutionId: newTrial.solutionId,
-      testData: newTrial.testData
+      testData: newTrial.testData,
+      // 额外需求信息
+      industry: newTrial.industry,
+      scenario: newTrial.scenario,
+      budget: newTrial.budget
     })
     
     showNewTrial.value = false
     newTrial.productId = ''
     newTrial.solutionId = null
     newTrial.testData = ''
+    newTrial.industry = ''
+    newTrial.scenario = ''
+    newTrial.budget = ''
+    submitAttempted.value = false
     
     await loadData()
     alert('试用创建成功！')
@@ -480,8 +568,14 @@ function purchaseIntentText(v) {
 
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
-.form-select, .form-textarea { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
-.form-select:focus, .form-textarea:focus { outline: none; border-color: #0066ff; }
+.form-select, .form-textarea, .form-input { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+.form-select:focus, .form-textarea:focus, .form-input:focus { outline: none; border-color: #0066ff; }
+.form-select.error, .form-input.error { border-color: #ff4d4f; }
+
+.form-section { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px dashed #e0e0e0; }
+.section-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.required { font-size: 12px; font-weight: 400; color: #ff4d4f; }
+.required-star { color: #ff4d4f; }
 
 .form-info { background: #f9fafb; padding: 16px; border-radius: 8px; font-size: 14px; }
 .form-info ul { margin: 8px 0 0; padding-left: 20px; color: #666; }

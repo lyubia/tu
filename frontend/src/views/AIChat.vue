@@ -12,9 +12,9 @@
         />
         
         <div class="quick-questions">
-          <h4>常见问题</h4>
-          <button v-for="q in quickQuestions" :key="q" class="quick-btn" @click="sendQuickQuestion(q)">
-            {{ q }}
+          <h4>快捷入口</h4>
+          <button v-for="q in quickQuestions" :key="q.label" class="quick-btn" @click="sendQuickQuestion(q.text)">
+            {{ q.label }}
           </button>
         </div>
 
@@ -155,20 +155,42 @@
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { aiAPI, feedbackAPI } from '../api'
+import axios from 'axios'
+import { aiAPI, feedbackAPI, conversationAPI, messageAPI } from '../api'
 import ProductCard from '../components/ProductCard.vue'
 import RequirementForm from '../components/RequirementForm.vue'
 
+// 首次用户开场白
+const firstTimeGreeting = {
+  role: 'assistant',
+  content: `您好！欢迎体验智能选型顾问 🤖\n\n我是您的专属AI顾问，可以帮您推荐最合适的物流管理系统。\n\n请先告诉我您所在的**行业**，或者直接点击下方的快捷入口了解我们的解决方案：`
+}
+
+// 老用户开场白（基于历史）
+const returningGreeting = (lastTopic) => ({
+  role: 'assistant',
+  content: `您好！很高兴再次见到您 👋\n\n上次您提到${lastTopic}，请问现在有新的进展吗？或者您想了解其他方面的方案？`
+})
+
 const messages = ref([
-  {
-    role: 'assistant',
-    content: '您好！我是您的智能选型顾问 🤖\n\n为了给您推荐最合适的产品和方案，请告诉我：\n1. 您所在的行业\n2. 您希望解决的问题或场景\n3. 您的预算范围'
-  }
+  firstTimeGreeting
 ])
 const inputMessage = ref('')
 const loading = ref(false)
 const messagesRef = ref(null)
 const router = useRouter()
+
+// 对话相关状态
+const currentConversationId = ref(null)
+const userId = 1 // 默认用户ID
+const isReturningUser = ref(false)
+const userProfile = ref({
+  industry: '',
+  scenario: '',
+  budget: '',
+  scale: '',
+  painPoints: []
+})
 
 // 收集当前所有需求
 const currentRequirements = computed(() => {
@@ -182,15 +204,88 @@ const currentRequirements = computed(() => {
 })
 
 const quickQuestions = [
-  '物流行业仓储管理方案',
-  '电商订单管理系统推荐',
-  '供应链数字化转型',
-  '中小型企业性价比方案'
+  { label: '🚚 车队管理', text: '我想了解车队管理解决方案' },
+  { label: '📦 仓储物流', text: '我想了解仓储管理解决方案' },
+  { label: '🛣️ TMS运输', text: '我想了解TMS运输管理系统' },
+  { label: '💰 询价预约', text: '我想预约免费咨询' },
+  { label: '❓ 常见问题', text: '请告诉我你们能解决什么问题' }
 ]
 
-onMounted(() => {
+onMounted(async () => {
+  await initConversation()
   scrollToBottom()
 })
+
+// 初始化对话 - 创建新对话或获取最近对话
+async function initConversation() {
+  // 加载本地保存的用户画像
+  loadUserProfile()
+  
+  try {
+    // 获取用户对话历史
+    const historyRes = await conversationAPI.history(userId)
+    const conversations = historyRes.data.data || []
+    
+    if (conversations.length > 0) {
+      // 有历史对话，加载最近的对话
+      const latestConv = conversations[0]
+      currentConversationId.value = latestConv.id
+      isReturningUser.value = true
+      
+      // 加载该对话的消息历史
+      const messagesRes = await messageAPI.list(latestConv.id)
+      const historicalMessages = messagesRes.data.data || []
+      
+      if (historicalMessages.length > 0) {
+        // 从历史消息中提取用户画像信息
+        extractProfileFromHistory(historicalMessages)
+        
+        // 根据是否有历史消息决定显示什么
+        const lastUserMsg = historicalMessages
+          .filter(m => m.role === 'user')
+          .pop()
+        
+        // 提取最后一个话题
+        const lastTopic = lastUserMsg?.content?.slice(0, 20) || '相关需求'
+        
+        // 设置老用户开场白
+        messages.value = [returningGreeting(lastTopic)]
+      }
+    } else {
+      // 没有历史对话，创建新对话
+      isReturningUser.value = false
+      messages.value = [firstTimeGreeting]
+      const createRes = await conversationAPI.create(userId)
+      currentConversationId.value = createRes.data.data?.id || createRes.data.id
+    }
+  } catch (e) {
+    console.error('初始化对话失败:', e)
+    // 失败时创建新对话
+    isReturningUser.value = false
+    messages.value = [firstTimeGreeting]
+    try {
+      const createRes = await conversationAPI.create(userId)
+      currentConversationId.value = createRes.data.data?.id || createRes.data.id
+    } catch (e2) {
+      console.error('创建对话失败:', e2)
+    }
+  }
+}
+
+// 从历史消息中提取用户画像信息
+function extractProfileFromHistory(historicalMessages) {
+  historicalMessages.forEach(m => {
+    if (m.requirements) {
+      if (m.requirements.industry) userProfile.value.industry = m.requirements.industry
+      if (m.requirements.scenario) userProfile.value.scenario = m.requirements.scenario
+      if (m.requirements.budget) userProfile.value.budget = m.requirements.budget
+      if (m.requirements.scale) userProfile.value.scale = m.requirements.scale
+      if (m.requirements.painPoints) userProfile.value.painPoints = m.requirements.painPoints
+    }
+  })
+  // 保存到本地
+  saveUserProfileLocal()
+}
 
 async function sendMessage(text = inputMessage.value) {
   if (!text.trim() || loading.value) return
@@ -205,21 +300,42 @@ async function sendMessage(text = inputMessage.value) {
   
   try {
     const res = await aiAPI.chat({
-      userId: 1,
+      userId: userId,
       message: userMessage,
       history: messages.value.slice(-6).map(m => ({ role: m.role, content: m.content }))
     })
     
     const data = res.data.data
-    messages.value.push({
+    
+    // 提取并保存用户画像信息
+    if (data.requirements) {
+      Object.keys(data.requirements).forEach(key => {
+        if (data.requirements[key]) {
+          userProfile.value[key] = data.requirements[key]
+        }
+      })
+      saveUserProfileLocal()
+    }
+    
+    // 如果AI没有返回追问问题，则检查缺失字段并追问
+    let nextQuestion = data.needsMoreInfo ? data.nextQuestion : null
+    if (!nextQuestion && data.requirements) {
+      nextQuestion = extractAndAsk(data)
+    }
+    
+    const assistantMsg = {
       role: 'assistant',
-      content: data.reply,
+      content: data.message?.message?.content || data.message?.content || "" || '',
       recommendedProducts: data.recommendedProducts,
       recommendedSolutions: data.recommendedSolutions,
       bundles: data.bundles,
       requirements: data.requirements,
-      nextQuestion: data.needsMoreInfo ? data.nextQuestion : null
-    })
+      nextQuestion: nextQuestion
+    }
+    messages.value.push(assistantMsg)
+    
+    // 保存用户消息和AI回复到后端
+    await saveMessages(userMessage, assistantMsg)
   } catch (e) {
     messages.value.push({
       role: 'assistant',
@@ -231,12 +347,156 @@ async function sendMessage(text = inputMessage.value) {
   scrollToBottom()
 }
 
-function sendQuickQuestion(q) {
-  sendMessage(q)
+// 保存消息到后端
+async function saveMessages(userContent, assistantMsg) {
+  if (!currentConversationId.value) return
+  
+  try {
+    // 保存用户消息
+    await messageAPI.save({
+      conversationId: currentConversationId.value,
+      role: 'user',
+      content: userContent,
+      requirements: currentRequirements.value,
+      userProfile: userProfile.value
+    })
+    
+    // 保存AI回复
+    await messageAPI.save({
+      conversationId: currentConversationId.value,
+      role: 'assistant',
+      content: assistantMsg.content,
+      requirements: assistantMsg.requirements,
+      recommendedProducts: assistantMsg.recommendedProducts,
+      recommendedSolutions: assistantMsg.recommendedSolutions,
+      bundles: assistantMsg.bundles,
+      nextQuestion: assistantMsg.nextQuestion
+    })
+  } catch (e) {
+    console.error('保存消息失败:', e)
+  }
 }
 
-function finishAndGenerate() {
+function sendQuickQuestion(text) {
+  sendMessage(text)
+}
+
+async function finishAndGenerate() {
+  // 保存当前需求到用户画像
+  await updateUserProfile()
+  
+  // 发送结束对话消息
   sendMessage('请根据以上对话内容，生成适配我的方案，给出1-2套可对比方案，并推荐可试用的产品。')
+  
+  // 对话发送后，等待回复，然后刷新首页推荐
+  setTimeout(() => {
+    refreshHomeRecommendations()
+  }, 1500)
+}
+
+// 更新用户画像 - 从对话中提取行业等信息
+async function updateUserProfile() {
+  const reqs = currentRequirements.value
+  
+  // 更新本地画像
+  if (reqs.industry) userProfile.value.industry = reqs.industry
+  if (reqs.scenario) userProfile.value.scenario = reqs.scenario
+  if (reqs.budget) userProfile.value.budget = reqs.budget
+  if (reqs.scale) userProfile.value.scale = reqs.scale
+  if (reqs.painPoints) userProfile.value.painPoints = reqs.painPoints
+  
+  saveUserProfileLocal()
+  
+  // 从需求中提取行业
+  if (reqs.industry) {
+    try {
+      // 获取当前用户
+      let user = null
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        user = JSON.parse(userStr)
+      }
+      
+      if (user) {
+        // 更新本地用户信息
+        user.industry = reqs.industry
+        localStorage.setItem('user', JSON.stringify(user))
+        
+        // 调用API更新用户画像（如果后端支持）
+        try {
+          await axios.post('/api/users/update-industry', {
+            userId: user.id,
+            industry: reqs.industry,
+            tags: reqs
+          })
+        } catch (e) {
+          // API不存在时静默失败，本地已保存
+          console.log('用户画像API不可用，使用本地存储')
+        }
+      }
+    } catch (e) {
+      console.error('更新用户画像失败:', e)
+    }
+  }
+}
+
+// 本地保存用户画像
+function saveUserProfileLocal() {
+  localStorage.setItem('ai_chat_user_profile', JSON.stringify(userProfile.value))
+}
+
+// 加载本地用户画像
+function loadUserProfile() {
+  const saved = localStorage.getItem('ai_chat_user_profile')
+  if (saved) {
+    try {
+      userProfile.value = { ...userProfile.value, ...JSON.parse(saved) }
+    } catch (e) {
+      console.error('加载用户画像失败:', e)
+    }
+  }
+}
+
+// 从对话中动态提取信息并追问
+function extractAndAsk(data) {
+  const missingFields = []
+  const reqs = { ...userProfile.value, ...data.requirements }
+  
+  // 检查缺失字段
+  if (!reqs.scenario && !userProfile.value.scenario) {
+    missingFields.push('scenario')
+  }
+  if (!reqs.budget && !userProfile.value.budget) {
+    missingFields.push('budget')
+  }
+  if (!reqs.scale && !userProfile.value.scale) {
+    missingFields.push('scale')
+  }
+  if (!reqs.painPoints?.length && !userProfile.value.painPoints?.length) {
+    missingFields.push('painPoints')
+  }
+  
+  // 每次只问一个问题
+  if (missingFields.length > 0) {
+    const nextField = missingFields[0]
+    const questions = {
+      scenario: '请问您主要想解决哪些场景的问题？比如：仓储管理、运输调度、订单处理等',
+      budget: '请问您的预算范围是多少？例如：10万以下、10-50万、50万以上',
+      scale: '请问您的企业规模是？例如：小型（50人以下）、中型（50-500人）、大型（500人以上）',
+      painPoints: '请问您目前最大的痛点是什么？例如：效率低、成本高、数据不准等'
+    }
+    return questions[nextField] || null
+  }
+  return null
+}
+
+// 刷新首页推荐
+function refreshHomeRecommendations() {
+  // 发送自定义事件通知首页刷新推荐
+  window.dispatchEvent(new CustomEvent('refresh-recommendations'))
+  
+  // 同时保存标记，下次首页加载时也会刷新
+  localStorage.setItem('recommendations-needs-refresh', 'true')
 }
 
 function scrollToBottom() {

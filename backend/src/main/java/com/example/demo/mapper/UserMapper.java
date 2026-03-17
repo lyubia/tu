@@ -9,6 +9,9 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE id = #{id}")
     User findById(Long id);
 
+    @Select("SELECT * FROM users WHERE username = #{username}")
+    User findByUsername(String username);
+
     @Select("SELECT * FROM users WHERE role = #{role}")
     List<User> findByRole(String role);
 
@@ -19,4 +22,7 @@ public interface UserMapper {
             "VALUES(#{username}, #{name}, #{role}, #{industry}, #{email}, NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(User user);
+
+    @Update("UPDATE users SET industry = #{industry} WHERE id = #{id}")
+    int updateIndustry(@Param("id") Long id, @Param("industry") String industry);
 }

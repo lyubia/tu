@@ -15,24 +15,41 @@ export const trialAPI = {
   stats: () => api.get('/trials/stats')
 }
 
+// 产品 API
+export const productAPI = {
+  list: (params) => api.get('/products', { params }),
+  detail: (id) => api.get(`/products/${id}`),
+  categories: () => api.get('/products/categories'),
+  popular: (limit) => api.get('/products/popular', { params: { limit } })
+}
+
+// 反馈 API
+export const feedbackAPI = {
+  submit: (data) => api.post('/feedback', data),
+  list: (params) => api.get('/feedback', { params })
+}
+
 // AI API
 export const aiAPI = {
   chat: (data) => api.post('/ai/chat', data)
 }
 
-// 为兼容现有代码，导出空对象
-export const productAPI = {
-  list: () => Promise.resolve({ data: { data: [] } }),
-  popular: () => Promise.resolve({ data: { data: [] } }),
-  detail: () => Promise.resolve({ data: { data: {} } }),
-  categories: () => Promise.resolve({ data: { data: [] } })
+// 对话 API
+export const conversationAPI = {
+  create: (userId) => api.post('/api/conversation/create', { userId }),
+  history: (userId) => api.get(`/api/conversation/history/${userId}`)
 }
 
-export const feedbackAPI = {
-  submit: () => Promise.resolve({ data: { success: true } }),
-  listAll: () => Promise.resolve({ data: { data: [] } }),
-  userFeedback: () => Promise.resolve({ data: { data: [] } }),
-  update: () => Promise.resolve({ data: { success: true } })
+// 消息 API
+export const messageAPI = {
+  save: (data) => api.post('/api/message/save', data),
+  list: (conversationId) => api.get(`/api/message/${conversationId}`)
+}
+
+// 需求 API
+export const requirementAPI = {
+  list: (conversationId) => api.get(`/api/requirement/${conversationId}`),
+  save: (data) => api.post('/api/requirement/save', data)
 }
 
 export default api

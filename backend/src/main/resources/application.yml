@@ -14,3 +14,9 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+ai:
+  api:
+    url: https://api.scnet.cn/api/llm/v1
+    key: "sk-NzAwLTExOTg3MzA3Mzg0LTE3NzMyOTQ3NDUxNTI="
+    model: MiniMax-M2.5
